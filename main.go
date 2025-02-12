@@ -26,6 +26,11 @@ func main() {
 		if rootArgs.Verbose {
 			fmt.Println("Task: Create client configurations")
 		}
+	case nil:
+		if rootArgs.Verbose {
+			fmt.Println("Exit")
+		}
+		os.Exit(0)
 	default:
 		fmt.Println("Error: Failed to infer type of subArgs!")
 		fmt.Printf("%T\n", subArgs)
