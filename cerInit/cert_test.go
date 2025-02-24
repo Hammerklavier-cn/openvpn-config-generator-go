@@ -6,20 +6,41 @@ import (
 	"testing"
 )
 
-func TestCertDirInit(T *testing.T) {
-	err := targetDirInit("test", false)
-	if err != nil {
+func TestEmptyCertDirInit(T *testing.T) {
+	if err := targetDirInit("test", false); err != nil {
 		fmt.Println(err)
 		T.Error(err)
 	}
 }
 
-func TestRemoveTestDir(T *testing.T) {
-	err := os.Remove("test")
-	if err != nil {
-		T.Log(err)
+func TestDirExistsCertDirInit(T *testing.T) {
+	if err := targetDirInit("test", false); err != nil {
+		fmt.Println(err)
+		T.Error(err)
 	}
-	err = os.RemoveAll("test")
+}
+
+func TestFileExistsCertDirInit(T *testing.T) {
+	if err := os.RemoveAll("test"); err != nil {
+		fmt.Println(err)
+		T.Error(err)
+	}
+	{
+		err := os.WriteFile("test", []byte("This file is a place holder for test.\n"), 0644)
+		if err != nil {
+			fmt.Println(err)
+			T.Error(err)
+		}
+	}
+	if err := targetDirInit("test", false); err != nil {
+		fmt.Println(err)
+		T.Error(err)
+	}
+
+}
+
+func TestRemoveTestDir(T *testing.T) {
+	err := os.RemoveAll("test")
 	if err != nil {
 		T.Error(err)
 	}
