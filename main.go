@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 
 	cli "gitcode.com/hammerklavier/openvpn-config-generator-go/CLI"
+	cerinit "gitcode.com/hammerklavier/openvpn-config-generator-go/cer_init"
 )
 
 func main() {
@@ -22,6 +24,13 @@ func main() {
 		if rootArgs.Verbose {
 			fmt.Println("Task: Initialise configuration, creates server configuration")
 		}
+		initArgs := subArgs.(cli.InitArguments)
+		// 0. init working directory
+		cerinit.TargetDirInit(initArgs.Dir, rootArgs.Verbose)
+		// 1. create certificate authority
+		cerinit.CertificateAuthorityInit(path.Join(initArgs.Dir, "CA"), initArgs.Algorithm, initArgs.Digest, rootArgs.Verbose)
+		// 2. create server certificate
+		// 3. create client certificate
 	case cli.ClientArguments:
 		if rootArgs.Verbose {
 			fmt.Println("Task: Create client configurations")
