@@ -55,6 +55,10 @@ var AlgorithmChoices = []string{
 	"RSA", "ECDSA", "EDDSA",
 }
 
+var DigestChoices = []string{
+	"MD5", "SHA1", "SHA224", "SHA256", "SHA384", "SHA512",
+}
+
 type SubcommandArguments interface {
 	isSubcommandArgumentStruct() bool
 }
@@ -73,6 +77,7 @@ type InitArguments struct {
 	Dir       string
 	KeySize   int
 	Algorithm string
+	Digest    string
 	days      int
 }
 
@@ -112,6 +117,11 @@ func ParseCli() (RootArguments, SubcommandArguments, error) {
 		&initArgs.Algorithm,
 		"algorithm", "RSA",
 		"Set algorithm for certificate.",
+	)
+	initCmd.Flags().StringVar(
+		&initArgs.Digest,
+		"digest", "SHA256",
+		"Set digest algorithm for certificate.",
 	)
 	initCmd.Flags().IntVarP(
 		&initArgs.days,
