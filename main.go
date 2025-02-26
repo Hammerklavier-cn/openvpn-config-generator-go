@@ -26,9 +26,17 @@ func main() {
 		}
 		initArgs := subArgs.(cli.InitArguments)
 		// 0. init working directory
-		cerinit.TargetDirInit(initArgs.Dir, rootArgs.Verbose)
+		err := cerinit.TargetDirInit(initArgs.Dir, rootArgs.Verbose)
+		if err != nil {
+			fmt.Printf("Failed to initialise target directory: %v\n", err)
+			os.Exit(1)
+		}
 		// 1. create certificate authority
-		cerinit.CertificateAuthorityInit(path.Join(initArgs.Dir, "CA"), initArgs.Algorithm, initArgs.Digest, rootArgs.Verbose)
+		err = cerinit.CertificateAuthorityInit(path.Join(initArgs.Dir, "CA"), initArgs.Algorithm, initArgs.Digest, rootArgs.Verbose)
+		if err != nil {
+			fmt.Printf("Failed to create certificate authority: %v\n", err)
+			os.Exit(1)
+		}
 		// 2. create server certificate
 		// 3. create client certificate
 	case cli.ClientArguments:
@@ -37,6 +45,7 @@ func main() {
 		}
 	case nil:
 		if rootArgs.Verbose {
+			fmt.Println("Note: You did not pass a subcommand.")
 			fmt.Println("Exit")
 		}
 		os.Exit(0)
