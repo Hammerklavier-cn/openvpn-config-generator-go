@@ -54,9 +54,9 @@ func initPKI(dir string) error {
 	for _, area := range areas {
 
 		// Find x509-types and keep the first one found
-		if fileStat, _ := os.Stat(area); fileStat != nil {
+		if fileStat, _ := os.Stat(path.Join(area, "x509-types")); fileStat != nil {
 			if fileStat.IsDir() && EasyrsaExtDir == "" {
-				EasyrsaExtDir = area
+				EasyrsaExtDir = path.Join(area, "x509-types")
 			}
 		}
 
@@ -88,6 +88,8 @@ func initPKI(dir string) error {
 	// TODO: return err if EasyrsaExtDir == ""
 	if EasyrsaExtDir == "" {
 		return errors.New("EasyrsaExtDir not found")
+	} else {
+		fmt.Println("EasyrsaExtDir found in", EasyrsaExtDir)
 	}
 
 	// TODO: return err if 'openssl-easyrsa.cnf' not found
