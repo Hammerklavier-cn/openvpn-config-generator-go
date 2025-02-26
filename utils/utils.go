@@ -8,10 +8,12 @@ import (
 )
 
 func CopyDir(sourceDir, targetDir string) error {
-	files, err := os.ReadDir("/usr/share/easy-rsa")
+	files, err := os.ReadDir(sourceDir)
 	if err != nil {
 		return fmt.Errorf("Failed to read easy-rsa source directory: %w", err)
 	}
+	// fmt.Println("source dir:", sourceDir, "target dir:", targetDir)
+	// fmt.Println("Files and Dirs:", files)
 
 	for _, file := range files {
 		sourcePath := path.Join(sourceDir, file.Name())
