@@ -14,17 +14,18 @@ func initPKI(dir string) error {
 
 	// Create PKI directory
 	if fileInfo, _ := os.Stat(path.Join(dir, "pki")); fileInfo != nil {
-		fmt.Printf("WARNING: PKI directory already exists!\nExisting PKI directory will be removed and recreated.\n")
+		fmt.Printf("WARNING: PKI directory already exists! Existing PKI directory will be removed and recreated.\n")
 		if err := os.RemoveAll(path.Join(dir, "pki")); err != nil {
 			return err
 		}
 	}
-	if err := os.Mkdir(path.Join(dir, "pki"), 755); err != nil {
+	if err := os.Mkdir(path.Join(dir, "pki"), 0755); err != nil {
 		return err
 	}
+
 	// Create subdirectories of `pki`
 	for _, area := range []string{"private", "req", "inline"} {
-		if err := os.Mkdir(path.Join(dir, "pki", area), 755); err != nil {
+		if err := os.Mkdir(path.Join(dir, "pki", area), 0755); err != nil {
 			return err
 		}
 	}
@@ -85,7 +86,9 @@ func initPKI(dir string) error {
 		}
 	}
 	// TODO: return err if EasyrsaExtDir == ""
-	// ...
+	if EasyrsaExtDir == "" {
+		return errors.New("EasyrsaExtDir not found")
+	}
 
 	// TODO: return err if 'openssl-easyrsa.cnf' not found
 	if _, err := os.Stat(path.Join(dir, "pki", "openssl-easyrsa.cnf")); os.IsNotExist(err) {

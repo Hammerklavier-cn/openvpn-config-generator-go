@@ -138,7 +138,7 @@ func CAGeneration(dir string, algorithm string, verbose bool) error {
 
 func CertificateAuthorityInit(dir string, algorithm string, digest string, verbose bool) error {
 	if verbose {
-		fmt.Println("Initialising Certificate Authority...")
+		fmt.Printf("Initialising Certificate Authority in %s...\n", dir)
 	}
 
 	// Initialise target dir in case it exists.
@@ -152,6 +152,9 @@ func CertificateAuthorityInit(dir string, algorithm string, digest string, verbo
 	}
 
 	// initialise PKI
+	if err := initPKI(dir); err != nil {
+		return err
+	}
 
 	return nil
 }
