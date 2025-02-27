@@ -49,15 +49,22 @@ func TargetDirInit(dir string, verbose bool) error {
 			fmt.Println("Proceed confirmed.")
 		}
 
-		// drop CA files, etc
-		// 1. Drop easy-rsa directory
-		if _, err := os.Stat(path.Join(dir, "easy-rsa")); err == nil {
-			err := os.RemoveAll(path.Join(dir, "easy-rsa"))
-			if err != nil {
-				return fmt.Errorf("Failed to remove easy-rsa directory: %w", err)
+		// 1. Drop easy-rsa related files and directories
+		{
+			var files_and_folders = []string{
+				"x509-types", "easyrsa", "openssl-easyrsa.cnf", "vars.example", "pki",
 			}
-			if verbose {
-				fmt.Printf("Removed easy-rsa directory in %s\n", dir)
+
+			for _, file_or_folder := range files_and_folders {
+				if _, err := os.Stat(path.Join(dir, file_or_folder)); err == nil {
+					err := os.RemoveAll(path.Join(dir, file_or_folder))
+					if err != nil {
+						return fmt.Errorf("Failed to remove %s: %w", file_or_folder, err)
+					}
+					if verbose {
+						fmt.Printf("Removed %s in %s\n", file_or_folder, dir)
+					}
+				}
 			}
 		}
 		// 2. _PLACE Holder_
@@ -103,16 +110,16 @@ func TargetDirInit(dir string, verbose bool) error {
 	}
 
 	// Copy /usr/share/easy-rsa to the target dir.
-	err := os.Mkdir(path.Join(dir, "easy-rsa"), 0755)
-	if err != nil {
-		return fmt.Errorf("Failed to create easy-rsa directory: %w", err)
-	}
+	// err := os.Mkdir(path.Join(dir, "easy-rsa"), 0755)
+	// if err != nil {
+	// 	return fmt.Errorf("Failed to create easy-rsa directory: %w", err)
+	// }
 	if verbose {
 		fmt.Printf("Created easy-rsa directory in %s\n", dir)
 	}
 
 	// Copy files from /usr/share/easy-rsa to the target directory
-	if err := utils.CopyDir("/usr/share/easy-rsa", path.Join(dir, "easy-rsa")); err != nil {
+	if err := utils.CopyDir("/usr/share/easy-rsa", path.Join(dir)); err != nil {
 		return fmt.Errorf("Failed to copy easy-rsa files: %w", err)
 	}
 
