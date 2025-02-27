@@ -15,6 +15,7 @@ func initPKI(dir string) error {
 	// Create PKI directory
 	if fileInfo, _ := os.Stat(path.Join(dir, "pki")); fileInfo != nil {
 		fmt.Printf("WARNING: PKI directory already exists! Existing PKI directory will be removed and recreated.\n")
+		// TODO: add confirmation before removing the directory here.
 		if err := os.RemoveAll(path.Join(dir, "pki")); err != nil {
 			return err
 		}
