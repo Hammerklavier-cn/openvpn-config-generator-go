@@ -3,36 +3,49 @@ package cerinit
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"testing"
 )
 
+var temp_dir, _ = os.MkdirTemp("", "pattern")
+
 func TestEmptyCertDirInit(T *testing.T) {
-	if err := TargetDirInit("test", false); err != nil {
+	// Skip if windows system
+	if runtime.GOOS == "windows" {
+		T.Skip("Skipping test on Windows system")
+	}
+	if err := TargetDirInit(temp_dir, false); err != nil {
 		fmt.Println(err)
 		T.Error(err)
 	}
 }
 
 func TestDirExistsCertDirInit(T *testing.T) {
-	if err := TargetDirInit("test", false); err != nil {
+	if runtime.GOOS == "windows" {
+		T.Skip("Skipping test on Windows system")
+	}
+	if err := TargetDirInit(temp_dir, false); err != nil {
 		fmt.Println(err)
 		T.Error(err)
 	}
 }
 
 func TestFileExistsCertDirInit(T *testing.T) {
-	if err := os.RemoveAll("test"); err != nil {
+	if runtime.GOOS == "windows" {
+		T.Skip("Skipping test on Windows system")
+	}
+	if err := os.RemoveAll(temp_dir); err != nil {
 		fmt.Println(err)
 		T.Error(err)
 	}
 	{
-		err := os.WriteFile("test", []byte("This file is a place holder for test.\n"), 0644)
+		err := os.WriteFile(temp_dir, []byte("This file is a place holder for test.\n"), 0644)
 		if err != nil {
 			fmt.Println(err)
 			T.Error(err)
 		}
 	}
-	if err := TargetDirInit("test", false); err != nil {
+	if err := TargetDirInit(temp_dir, false); err != nil {
 		fmt.Println(err)
 		T.Error(err)
 	}
@@ -40,8 +53,12 @@ func TestFileExistsCertDirInit(T *testing.T) {
 }
 
 func TestRemoveTestDir(T *testing.T) {
-	err := os.RemoveAll("test")
+	if _, err := os.Stat(temp_dir); os.IsNotExist(err) {
+		T.Skip("No test directory detected. Skip.")
+	}
+	err := os.RemoveAll(temp_dir)
 	if err != nil {
 		T.Error(err)
 	}
+	T.Logf("Removed test directory: %s", temp_dir)
 }
