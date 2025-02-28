@@ -2,6 +2,9 @@
 
 [English](README_en#openvpn-config-generator-go)
 
+**警告：该项目还在开发中，请不要使用。**  
+**Warning: This project is still under development. Please do not use it.**
+
 自动生成 OpenVPN 的证书文件。Automatically generate configurations for OpenVPN.
 
 ## 依赖
