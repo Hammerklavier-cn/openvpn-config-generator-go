@@ -32,7 +32,11 @@ func main() {
 			os.Exit(1)
 		}
 		// 1. create certificate authority
-		err = cerinit.CertificateAuthorityInit(path.Join(initArgs.Dir, "CA"), initArgs.Algorithm, initArgs.Digest, rootArgs.Verbose)
+		err = cerinit.CertificateAuthorityInit(
+			path.Join(initArgs.Dir, "CA"),
+			initArgs.Algorithm, initArgs.Digest, initArgs.Days,
+			rootArgs.Verbose,
+		)
 		if err != nil {
 			fmt.Printf("Failed to create certificate authority: %v\n", err)
 			os.Exit(1)
