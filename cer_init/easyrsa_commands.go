@@ -139,3 +139,38 @@ func initPKI(dir string, verbose bool) error {
 
 	return nil
 }
+
+// This is a replacement for `./easyrsa build-ca`
+func buildCA(dir string, verbose bool) error {
+
+	var EASYRSA_PKI = path.Join(dir, "pki")
+
+	var cipher = "-aes256"
+	var nopass = true
+	var out_key = path.Join(EASYRSA_PKI, "private", "ca.key")
+	var out_file = path.Join(EASYRSA_PKI, "ca.crt")
+	var date_stamp = 1
+	var x509 = 1
+
+	if nopass {
+		cipher = ""
+	}
+
+	// The following is the go implementation of `verify_ca_init test`
+	// function of `easyrsa`
+	var varify_ca_init_result bool
+	{
+		// Check if any of the following files exists
+		file_names := []string{
+			"ca.crt", path.Join("private", "ca.key"),
+			"index.txt", "index.txt.attr", "serial"}
+		for _, file_name := range file_names {
+			if _, err := os.Stat(path.Join(EASYRSA_PKI, file_name)); err == nil {
+				varify_ca_init_result = true
+			}
+		}
+	}
+	// `verify_ca_init test` implementation ends.
+
+	return nil
+}

@@ -17,6 +17,35 @@ type UserAbort struct {
 
 func (u UserAbort) Error() string { return u.message }
 
+func softReset(dir string, verbose bool) error {
+	// files to purge:
+	// ca.crt crl.pem \
+	// issued private reqs inline revoked renewed \
+	// serial serial.old index.txt index.txt.old \
+	// index.txt.attr index.txt.attr.old \
+	// ecparams certs_by_serial
+	// 1. Drop easy-rsa related files and directories
+	{
+		var files_and_folders = []string{
+			"x509-types", "easyrsa", "openssl-easyrsa.cnf",
+			"vars.example", "pki",
+		}
+
+		for _, file_or_folder := range files_and_folders {
+			if _, err := os.Stat(path.Join(dir, file_or_folder)); err == nil {
+				err := os.RemoveAll(path.Join(dir, file_or_folder))
+				if err != nil {
+					return fmt.Errorf("Failed to remove %s: %w", file_or_folder, err)
+				}
+				if verbose {
+					fmt.Printf("Removed %s in %s\n", file_or_folder, dir)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func TargetDirInit(dir string, verbose bool) error {
 	if file_info, err := os.Stat(dir); os.IsNotExist(err) {
 		// In this case, target dir does not exists.
@@ -27,7 +56,8 @@ func TargetDirInit(dir string, verbose bool) error {
 		os.Mkdir(dir, 0755)
 	} else if file_info.IsDir() == true {
 		// In this case, a directory with the same name exists.
-		// After confirmation, some contents of `dir` will be removed.
+		// After confirmation, ~~some contents of `dir` will be removed.~~
+		// All contents of `dir` will be removed. Soft reset needs testing.
 		fmt.Printf("Target dir `%s` already exist. All changes made in this directory will be purged.\n", dir)
 
 		fmt.Printf("Sure to proceed? [Y/n]\t")
@@ -49,25 +79,13 @@ func TargetDirInit(dir string, verbose bool) error {
 			fmt.Println("Proceed confirmed.")
 		}
 
-		// 1. Drop easy-rsa related files and directories
-		{
-			var files_and_folders = []string{
-				"x509-types", "easyrsa", "openssl-easyrsa.cnf", "vars.example", "pki",
-			}
-
-			for _, file_or_folder := range files_and_folders {
-				if _, err := os.Stat(path.Join(dir, file_or_folder)); err == nil {
-					err := os.RemoveAll(path.Join(dir, file_or_folder))
-					if err != nil {
-						return fmt.Errorf("Failed to remove %s: %w", file_or_folder, err)
-					}
-					if verbose {
-						fmt.Printf("Removed %s in %s\n", file_or_folder, dir)
-					}
-				}
-			}
+		// hard reset
+		if err := os.RemoveAll(dir); err != nil {
+			return err
 		}
-		// 2. _PLACE Holder_
+		if err := os.Mkdir(dir, 0755); err != nil {
+			return err
+		}
 
 	} else if file_info.IsDir() == false {
 		// In this case, a file with the same name exists.
@@ -158,13 +176,20 @@ func CertificateAuthorityInit(dir string, algorithm string, digest string, verbo
 		return err
 	}
 
-	// initialise PKI
+	// initialise PKI: Create a skeleton directory structure
 	if err := initPKI(dir, verbose); err != nil {
 		return err
 	}
-
 	if verbose {
 		fmt.Printf("PKI initialisation completed. PKI directory is supposed to be %s/pki\n", dir)
+	}
+
+	// Create a Certificate Authority
+	if err := buildCA(dir, verbose); err != nil {
+		return err
+	}
+	if verbose {
+		fmt.Printf("Certificate Authority initialisation completed.\n")
 	}
 
 	return nil
