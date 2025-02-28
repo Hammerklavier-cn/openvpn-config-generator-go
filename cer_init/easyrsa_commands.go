@@ -10,23 +10,29 @@ import (
 
 // initialise PKI.
 // This is a replacement for `./easyrsa init-pki`.
-func initPKI(dir string) error {
+func initPKI(dir string, verbose bool) error {
+
+	var EASYRSA_PKI = path.Join(dir, "pki")
+	var vars_file = "vars"
+	var vars_file_example = "vars.example"
+	var ssl_cnf_file = "openssl-easyrsa.cnf"
+	var x509_types_dir = "x509-types"
 
 	// Create PKI directory
-	if fileInfo, _ := os.Stat(path.Join(dir, "pki")); fileInfo != nil {
+	if fileInfo, _ := os.Stat(EASYRSA_PKI); fileInfo != nil {
 		fmt.Printf("WARNING: PKI directory already exists! Existing PKI directory will be removed and recreated.\n")
 		// TODO: add confirmation before removing the directory here.
-		if err := os.RemoveAll(path.Join(dir, "pki")); err != nil {
+		if err := os.RemoveAll(EASYRSA_PKI); err != nil {
 			return err
 		}
 	}
-	if err := os.Mkdir(path.Join(dir, "pki"), 0755); err != nil {
+	if err := os.Mkdir(EASYRSA_PKI, 0755); err != nil {
 		return err
 	}
 
 	// Create subdirectories of `pki`
 	for _, area := range []string{"private", "req", "inline"} {
-		if err := os.Mkdir(path.Join(dir, "pki", area), 0755); err != nil {
+		if err := os.Mkdir(path.Join(EASYRSA_PKI, area), 0755); err != nil {
 			return err
 		}
 	}
@@ -43,7 +49,7 @@ func initPKI(dir string) error {
 		# One reason for this is to make packaging work.
 	*/
 	var areas = []string{
-		path.Join(dir, "pki"),
+		EASYRSA_PKI,
 		".",
 		"/usr/local/share/easy-rsa",
 		"/usr/share/easy-rsa",
@@ -55,22 +61,22 @@ func initPKI(dir string) error {
 	for _, area := range areas {
 
 		// Find x509-types and keep the first one found
-		if fileStat, _ := os.Stat(path.Join(area, "x509-types")); fileStat != nil {
+		if fileStat, _ := os.Stat(path.Join(area, x509_types_dir)); fileStat != nil {
 			if fileStat.IsDir() && EasyrsaExtDir == "" {
 				EasyrsaExtDir = path.Join(area, "x509-types")
 			}
 		}
 
 		// find 'openssl-easyrsa.cnf'
-		if fileStat, _ := os.Stat(path.Join(area, "openssl-easyrsa.cnf")); fileStat != nil {
-			if _, err := os.Stat(path.Join(dir, "pki", "openssl-easyrsa.cnf")); os.IsNotExist(err) {
-				src, err := os.Open(path.Join(area, "openssl-easyrsa.cnf"))
+		if fileStat, _ := os.Stat(path.Join(area, ssl_cnf_file)); fileStat != nil {
+			if _, err := os.Stat(path.Join(EASYRSA_PKI, ssl_cnf_file)); os.IsNotExist(err) {
+				src, err := os.Open(path.Join(area, ssl_cnf_file))
 				if err != nil {
 					return err
 				}
 				defer src.Close()
 
-				dst, err := os.Create(path.Join(dir, "pki", "openssl-easyrsa.cnf"))
+				dst, err := os.Create(path.Join(EASYRSA_PKI, ssl_cnf_file))
 				if err != nil {
 					return err
 				}
@@ -86,16 +92,49 @@ func initPKI(dir string) error {
 			continue
 		}
 	}
-	// TODO: return err if EasyrsaExtDir == ""
+
 	if EasyrsaExtDir == "" {
 		return errors.New("EasyrsaExtDir not found")
 	} else {
 		fmt.Println("EasyrsaExtDir found in", EasyrsaExtDir)
 	}
 
-	// TODO: return err if 'openssl-easyrsa.cnf' not found
-	if _, err := os.Stat(path.Join(dir, "pki", "openssl-easyrsa.cnf")); os.IsNotExist(err) {
+	// return err if 'openssl-easyrsa.cnf' not found
+	if _, err := os.Stat(path.Join(EASYRSA_PKI, ssl_cnf_file)); os.IsNotExist(err) {
 		return errors.New("openssl-easyrsa.cnf not found")
+	}
+
+	// create `vars` if not found
+	if _, err := os.Stat(path.Join(EASYRSA_PKI, vars_file)); os.IsNotExist(err) {
+		if file_stat, _ := os.Stat(path.Join(EASYRSA_PKI, vars_file_example)); !file_stat.IsDir() {
+			source_file, err := os.Open(path.Join(EASYRSA_PKI, vars_file_example))
+			if err != nil {
+				return err
+			}
+			defer source_file.Close()
+
+			dest_file, err := os.Create(path.Join(EASYRSA_PKI, vars_file))
+			if err != nil {
+				return err
+			}
+			defer dest_file.Close()
+
+			if _, err := io.Copy(dest_file, source_file); err != nil {
+				return err
+			}
+
+			fmt.Println("vars is created under", path.Join(EASYRSA_PKI, vars_file))
+		} else {
+			fmt.Printf(
+				"vars.example not found at %s. Please create vars file manually.\n",
+				path.Join(EASYRSA_PKI, vars_file_example))
+		}
+	} else {
+		if verbose {
+			fmt.Printf(
+				"vars is found under %s. Skip creating new one.\n",
+				path.Join(EASYRSA_PKI, vars_file))
+		}
 	}
 
 	return nil

@@ -159,8 +159,12 @@ func CertificateAuthorityInit(dir string, algorithm string, digest string, verbo
 	}
 
 	// initialise PKI
-	if err := initPKI(dir); err != nil {
+	if err := initPKI(dir, verbose); err != nil {
 		return err
+	}
+
+	if verbose {
+		fmt.Printf("PKI initialisation completed. PKI directory is supposed to be %s/pki\n", dir)
 	}
 
 	return nil
