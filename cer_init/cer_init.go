@@ -161,7 +161,7 @@ func CAGeneration(dir string, algorithm string, verbose bool) error {
 	return nil
 }
 
-func CertificateAuthorityInit(dir string, algorithm string, digest string, verbose bool) error {
+func CertificateAuthorityInit(dir string, algorithm string, digest string, days int, verbose bool) error {
 	if verbose {
 		fmt.Printf("Initialising Certificate Authority in %s...\n", dir)
 	}

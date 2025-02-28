@@ -13,8 +13,8 @@ import (
 func initPKI(dir string, verbose bool) error {
 
 	var EASYRSA_PKI = path.Join(dir, "pki")
-	var vars_file = "vars"
-	var vars_file_example = "vars.example"
+	// var vars_file = "vars"
+	// var vars_file_example = "vars.example"
 	var ssl_cnf_file = "openssl-easyrsa.cnf"
 	var x509_types_dir = "x509-types"
 
@@ -104,61 +104,67 @@ func initPKI(dir string, verbose bool) error {
 		return errors.New("openssl-easyrsa.cnf not found")
 	}
 
-	// create `vars` if not found
-	if _, err := os.Stat(path.Join(EASYRSA_PKI, vars_file)); os.IsNotExist(err) {
-		if file_stat, _ := os.Stat(path.Join(EASYRSA_PKI, vars_file_example)); !file_stat.IsDir() {
-			source_file, err := os.Open(path.Join(EASYRSA_PKI, vars_file_example))
-			if err != nil {
-				return err
-			}
-			defer source_file.Close()
+	// The following commented lines are deprecated.
+	// The original bash code of this part doesn't make any
+	// sense under this circumstance, because `vars.example`
+	// does not exists under the PKI directory.
+	//
+	// // create `vars` if not found
+	// if _, err := os.Stat(path.Join(EASYRSA_PKI, vars_file)); os.IsNotExist(err) {
+	// 	if file_stat, _ := os.Stat(path.Join(EASYRSA_PKI, vars_file_example)); file_stat != nil && !file_stat.IsDir() {
+	// 		source_file, err := os.Open(path.Join(EASYRSA_PKI, vars_file_example))
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		defer source_file.Close()
 
-			dest_file, err := os.Create(path.Join(EASYRSA_PKI, vars_file))
-			if err != nil {
-				return err
-			}
-			defer dest_file.Close()
+	// 		dest_file, err := os.Create(path.Join(EASYRSA_PKI, vars_file))
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		defer dest_file.Close()
 
-			if _, err := io.Copy(dest_file, source_file); err != nil {
-				return err
-			}
+	// 		if _, err := io.Copy(dest_file, source_file); err != nil {
+	// 			return err
+	// 		}
 
-			fmt.Println("vars is created under", path.Join(EASYRSA_PKI, vars_file))
-		} else {
-			fmt.Printf(
-				"vars.example not found at %s. Please create vars file manually.\n",
-				path.Join(EASYRSA_PKI, vars_file_example))
-		}
-	} else {
-		if verbose {
-			fmt.Printf(
-				"vars is found under %s. Skip creating new one.\n",
-				path.Join(EASYRSA_PKI, vars_file))
-		}
-	}
+	// 		fmt.Println("vars is created under", path.Join(EASYRSA_PKI, vars_file))
+	// 	} else {
+	// 		fmt.Printf(
+	// 			"vars.example not found at %s. Please create vars file manually.\n",
+	// 			path.Join(EASYRSA_PKI, vars_file_example))
+	// 	}
+	// } else {
+	// 	if verbose {
+	// 		fmt.Printf(
+	// 			"vars is found under %s. Skip creating new one.\n",
+	// 			path.Join(EASYRSA_PKI, vars_file))
+	// 	}
+	// }
 
 	return nil
 }
 
-// This is a replacement for `./easyrsa build-ca`
+// This is a replacement for `./easyrsa build-ca`.
+//
+// It will generate ca.crt and private/ca.key under pki directory.
 func buildCA(dir string, verbose bool) error {
 
 	var EASYRSA_PKI = path.Join(dir, "pki")
 
-	var cipher = "-aes256"
-	var nopass = true
-	var out_key = path.Join(EASYRSA_PKI, "private", "ca.key")
-	var out_file = path.Join(EASYRSA_PKI, "ca.crt")
-	var date_stamp = 1
-	var x509 = 1
+	// var cipher = "-aes256"
+	// var nopass = true
+	// var out_key = path.Join(EASYRSA_PKI, "private", "ca.key")
+	// var out_file = path.Join(EASYRSA_PKI, "ca.crt")
+	// var date_stamp = 1
+	// var x509 = 1
 
-	if nopass {
-		cipher = ""
-	}
+	// if nopass {
+	// 	cipher = ""
+	// }
 
 	// The following is the go implementation of `verify_ca_init test`
 	// function of `easyrsa`
-	var varify_ca_init_result bool
 	{
 		// Check if any of the following files exists
 		file_names := []string{
@@ -166,9 +172,12 @@ func buildCA(dir string, verbose bool) error {
 			"index.txt", "index.txt.attr", "serial"}
 		for _, file_name := range file_names {
 			if _, err := os.Stat(path.Join(EASYRSA_PKI, file_name)); err == nil {
-				varify_ca_init_result = true
+				return fmt.Errorf(
+					"Found existing CA file %s here, which is unexpected.\n",
+					path.Join(EASYRSA_PKI, file_name))
 			}
 		}
+
 	}
 	// `verify_ca_init test` implementation ends.
 
