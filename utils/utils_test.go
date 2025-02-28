@@ -18,28 +18,29 @@ func TestCopyDir(T *testing.T) {
 	if err != nil {
 		T.Fatal(err)
 	}
-	// defer func() { // Clean up
-	// 	if err := os.RemoveAll(tempSourceDir); err != nil {
-	// 		T.Fatal(err)
-	// 	}
-	// 	if err := os.RemoveAll(tempTargetDir); err != nil {
-	// 		T.Fatal(err)
-	// 	}
-	// }()
+	defer func() { // Clean up
+		if err := os.RemoveAll(tempSourceDir); err != nil {
+			T.Fatal(err)
+		}
+		if err := os.RemoveAll(tempTargetDir); err != nil {
+			T.Fatal(err)
+		}
+	}()
+
 	// Create contents
 	var file_paths_and_contents = []struct {
 		path string
 		data string
 	}{
 		{"file_Lv0", "content_Lv0"},
-		{"folder_Lv1file_Lv1", "content_Lv1"},
+		{"folder_Lv1/file_Lv1", "content_Lv1"},
 		{"folder_Lv1/folder_Lv2/file_Lv2", "content_Lv2"},
 		{"folder_Lv1/folder_Lv2/folder_Lv3/file_Lv3", "content_Lv3"},
 		{"folder_Lv1/folder_Lv2/folder_Lv3/folder_Lv4/file_Lv4", "content_Lv4"},
 	}
 
 	// create dirs
-	if err := os.MkdirAll(path.Join(tempSourceDir, "folder_Lv1", "folder_Lv2", "Folder_Lv3", "Folder_Lv4"), 0700); err != nil {
+	if err := os.MkdirAll(path.Join(tempSourceDir, "folder_Lv1", "folder_Lv2", "folder_Lv3", "folder_Lv4"), 0700); err != nil {
 		T.Fatal(err)
 	}
 	// create files
