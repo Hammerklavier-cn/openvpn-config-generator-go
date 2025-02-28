@@ -78,7 +78,7 @@ type InitArguments struct {
 	KeySize   int
 	Algorithm string
 	Digest    string
-	days      int
+	Days      int
 }
 
 type ClientArguments struct {
@@ -124,7 +124,7 @@ func ParseCli() (RootArguments, SubcommandArguments, error) {
 		"Set digest algorithm for certificate.",
 	)
 	initCmd.Flags().IntVarP(
-		&initArgs.days,
+		&initArgs.Days,
 		"days", "d", 180,
 		"For how long the certificate remains valid.")
 
