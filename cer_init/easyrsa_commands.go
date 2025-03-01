@@ -151,6 +151,7 @@ func initPKI(dir string, verbose bool) error {
 func buildCA(dir string, verbose bool) error {
 
 	var EASYRSA_PKI = path.Join(dir, "pki")
+	// var EASYRSA_REQ_CN = "Easy-RSA CA"
 
 	// var cipher = "-aes256"
 	// var nopass = true
@@ -177,9 +178,57 @@ func buildCA(dir string, verbose bool) error {
 					path.Join(EASYRSA_PKI, file_name))
 			}
 		}
-
 	}
 	// `verify_ca_init test` implementation ends.
+
+	// create necessary dirs and files
+	{
+		// create necessary dirs
+		dirs := []string{
+			"issued", "certs_by_serial",
+			path.Join("revoked", "certs_by_serial"),
+			path.Join("revoked", "private_by_serial"),
+			path.Join("revoked", "reqs_by_serial"),
+		}
+		for _, dir := range dirs {
+			if err := os.MkdirAll(path.Join(EASYRSA_PKI, dir), 0755); err != nil {
+				return err
+			}
+		}
+
+		// create necessary files
+		file, err := os.OpenFile(path.Join(EASYRSA_PKI, "index.txt"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		if _, err := file.WriteString(""); err != nil {
+			return err
+		}
+
+		file, err = os.OpenFile(path.Join(EASYRSA_PKI, "index.txt.attr"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		if _, err := file.WriteString(fmt.Sprintf("%s\n", "unique_subject = no")); err != nil {
+			return err
+		}
+
+		file, err = os.OpenFile(path.Join(EASYRSA_PKI, "serial"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		if _, err := file.WriteString(fmt.Sprintf("%s\n", "01")); err != nil {
+			return err
+		}
+	}
+
+	// Assign cert and key temp files
+	//
+	// The following is the implementation of
+	// "easyrsa easyrsa_mktemp()` function
 
 	return nil
 }
