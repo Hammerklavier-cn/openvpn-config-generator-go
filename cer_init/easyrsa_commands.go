@@ -149,7 +149,7 @@ func initPKI(dir string, verbose bool) error {
 // This is a replacement for `./easyrsa build-ca`.
 //
 // It will generate ca.crt and private/ca.key under pki directory.
-func buildCA(dir string, verbose bool) error {
+func buildCA(dir string, algo string, verbose bool) error {
 
 	var EASYRSA_PKI = path.Join(dir, "pki")
 	var EASYRSA_SSL_CONF = path.Join(EASYRSA_PKI, "openssl-easyrsa.cnf")
@@ -339,7 +339,33 @@ keyUsage = cRLSign, keyCertSign`
 		return err
 	}
 	// # Use this new SSL config for the rest of this function
+	EASYRSA_SSL_CONF = raw_ssl_cnf_tmp.Name()
 
+	// # Generate CA Key
+	//
+	// The following is the replacement of `verify_algo_params` for
+	// `./easyrsa` script
+	var EasyrsaAlgoParams string
+	switch algo {
+	case "rsa":
+		// # Set RSA key size
+		EasyrsaAlgoParams = "2048"
+	case "ec":
+		// # Verify Elliptic curve
+		EasyrsaAlgoParamsFile, err := os.CreateTemp(EASYRSA_PKI, "temp*")
+		EasyrsaAlgoParams = EasyrsaAlgoParamsFile.Name()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			EasyrsaAlgoParamsFile.Close()
+			os.Remove(EasyrsaAlgoParamsFile.Name())
+		}()
+		// # Create the required ecparams file
+		// # call openssl directly because error is expected
+
+	}
+	//
 	// default return nil, meaning no error ocurred.
 	return nil
 }
