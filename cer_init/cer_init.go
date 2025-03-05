@@ -185,7 +185,7 @@ func CertificateAuthorityInit(dir string, algorithm string, digest string, days 
 	}
 
 	// Create a Certificate Authority
-	if err := buildCA(dir, verbose); err != nil {
+	if err := buildCA(dir, algorithm, verbose); err != nil {
 		return err
 	}
 	if verbose {

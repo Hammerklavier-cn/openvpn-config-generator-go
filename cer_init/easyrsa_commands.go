@@ -311,29 +311,18 @@ keyUsage = cRLSign, keyCertSign`
 	} else {
 		content_for_awk = content_for_awk + "\n" + ``
 	}
+	fmt.Println(content_for_awk)
 	// In our cases, EASYRSA_EXTRA_EXTS shouldn't contain anything,
 	// unless I made a mistake. Its content is ignored.
 	//
-	/*
-		Now pass the string to regex, our replacement for awk.
+	// Now pass the string to regex, our replacement for awk.
 
-		The original awk command is:
-
-		```sh
-		awk '
-			{if ( match($0, "^#%EXTRA_EXTS%") )
-				{ while ( getline<"/dev/stdin" ) {print} next }
-			 {print}
-			}' $EASYRSA_SSL_CONF
-
-		```
-	*/
 	easyrsaSslConfBytes, err := os.ReadFile(EASYRSA_SSL_CONF)
 	if err != nil {
 		return err
 	}
 	easyrsaSslConfString := string(easyrsaSslConfBytes)
-	var pattern = regexp.MustCompile(`(?m)^#%CA_X509_TYPES_EXTRA_EXTS%`)
+	var pattern = regexp.MustCompile(`(?m)^#%CA_X509_TYPES_EXTRA_EXTS%.+$`)
 	easyrsaSslConfString = pattern.ReplaceAllLiteralString(easyrsaSslConfString, content_for_awk)
 	if _, err := raw_ssl_cnf_tmp.WriteString(easyrsaSslConfString); err != nil {
 		return err
@@ -363,7 +352,7 @@ keyUsage = cRLSign, keyCertSign`
 		}()
 		// # Create the required ecparams file
 		// # call openssl directly because error is expected
-
+		var _ = EasyrsaAlgoParams
 	}
 	//
 	// default return nil, meaning no error ocurred.
