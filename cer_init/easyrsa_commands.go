@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"regexp"
 )
 
 // initialise PKI.
@@ -151,6 +152,7 @@ func initPKI(dir string, verbose bool) error {
 func buildCA(dir string, verbose bool) error {
 
 	var EASYRSA_PKI = path.Join(dir, "pki")
+	var EASYRSA_SSL_CONF = path.Join(EASYRSA_PKI, "openssl-easyrsa.cnf")
 	// var EASYRSA_REQ_CN = "Easy-RSA CA"
 
 	// var cipher = "-aes256"
@@ -227,8 +229,117 @@ func buildCA(dir string, verbose bool) error {
 
 	// Assign cert and key temp files
 	//
-	// The following is the implementation of
+	// `os.CreateTemp` is used as a simplified implementation of
 	// "easyrsa easyrsa_mktemp()` function
+	out_key_tmp, err := os.CreateTemp(EASYRSA_PKI, "temp*")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		out_key_tmp.Close()
+		os.Remove(out_key_tmp.Name())
+	}()
+	out_file_tmp, err := os.CreateTemp(EASYRSA_PKI, "temp*")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		out_file_tmp.Close()
+		os.Remove(out_file_tmp.Name())
+	}()
 
+	// Password is None as default.
+
+	// Assign tmp-file for config
+	raw_ssl_cnf_tmp, err := os.CreateTemp(EASYRSA_PKI, "temp*")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		raw_ssl_cnf_tmp.Close()
+		os.Remove(raw_ssl_cnf_tmp.Name())
+	}()
+
+	// # Insert x509-types COMMON and 'ca' and EASYRSA_EXTRA_EXTS
+
+	// Instead of passing through the content through a pipe, it
+	// will be stored in a string.
+	// First, find EASYRSA_EXT_DIR，or otherwise `create_x509_type
+	var areas = []string{
+		EASYRSA_PKI,
+		".",
+		"/usr/local/share/easy-rsa",
+		"/usr/share/easy-rsa",
+		"/etc/easy-rsa",
+	}
+	var x509_types_dir = "x509-types"
+	var EasyrsaExtDir string
+	for _, area := range areas {
+		// Find x509-types and keep the first one found
+		if fileStat, _ := os.Stat(path.Join(area, x509_types_dir)); fileStat != nil {
+			if fileStat.IsDir() && EasyrsaExtDir == "" {
+				EasyrsaExtDir = path.Join(area, "x509-types")
+			}
+		}
+	}
+	if EasyrsaExtDir == "" {
+		return fmt.Errorf(
+			"%s not found in any of %s!\n",
+			x509_types_dir, areas[:])
+	}
+	// 'ca' file
+	var content_for_awk string
+	if file_stat, err := os.Stat(path.Join(EasyrsaExtDir, "ca")); err == nil && !file_stat.IsDir() {
+		ca_bytes, err := os.ReadFile(path.Join(EasyrsaExtDir, "ca"))
+		if err != nil {
+			return err
+		}
+		content_for_awk = content_for_awk + string(ca_bytes)
+	} else {
+		content_for_awk = content_for_awk + `basicConstraints = CA:TRUE
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+keyUsage = cRLSign, keyCertSign`
+	}
+	// 'COMMON' file
+	if file_stat, err := os.Stat(path.Join(EasyrsaExtDir, "COMMON")); err == nil && !file_stat.IsDir() {
+		common_bytes, err := os.ReadFile(path.Join(EasyrsaExtDir, "COMMON"))
+		if err != nil {
+			return err
+		}
+		content_for_awk = content_for_awk + "\n" + string(common_bytes)
+	} else {
+		content_for_awk = content_for_awk + "\n" + ``
+	}
+	// In our cases, EASYRSA_EXTRA_EXTS shouldn't contain anything,
+	// unless I made a mistake. Its content is ignored.
+	//
+	/*
+		Now pass the string to regex, our replacement for awk.
+
+		The original awk command is:
+
+		```sh
+		awk '
+			{if ( match($0, "^#%EXTRA_EXTS%") )
+				{ while ( getline<"/dev/stdin" ) {print} next }
+			 {print}
+			}' $EASYRSA_SSL_CONF
+
+		```
+	*/
+	easyrsaSslConfBytes, err := os.ReadFile(EASYRSA_SSL_CONF)
+	if err != nil {
+		return err
+	}
+	easyrsaSslConfString := string(easyrsaSslConfBytes)
+	var pattern = regexp.MustCompile(`(?m)^#%CA_X509_TYPES_EXTRA_EXTS%`)
+	easyrsaSslConfString = pattern.ReplaceAllLiteralString(easyrsaSslConfString, content_for_awk)
+	if _, err := raw_ssl_cnf_tmp.WriteString(easyrsaSslConfString); err != nil {
+		return err
+	}
+	// # Use this new SSL config for the rest of this function
+
+	// default return nil, meaning no error ocurred.
 	return nil
 }
